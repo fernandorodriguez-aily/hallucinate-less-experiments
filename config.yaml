@@ -1,0 +1,7 @@
+max_tokens: 2048
+
+data_dir: data
+#data_file: covid.csv
+data_file: touche.csv
+
+results_file: database.db
