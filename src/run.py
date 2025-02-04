@@ -187,13 +187,14 @@ if __name__ == "__main__":
     # Set up paths and model ID
     data_path = base_path / config["data_dir"] / config["data_file"]
     db_path = base_path / config["data_dir"] / config["results_file"]
-    model_id = OpenAIModelID.GPT4O
+    model_id = BedrockModelID.Claude35Sonnet20240620V1_0
+    # model_id = OpenAIModelID.GPT4O
 
     # Run the main processing pipeline
     run(
         data_path=data_path,
         db_path=db_path,
         model_id=model_id,
-        max_rows=5,  # Uncomment to limit the number of rows processed
-        max_workers=32,
+        # max_rows=5,  # Uncomment to limit the number of rows processed
+        max_workers=4,
     )

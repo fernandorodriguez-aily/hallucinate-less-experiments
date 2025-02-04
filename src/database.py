@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 
 def initialize_db(db_path: Union[str, Path]):
@@ -121,3 +121,63 @@ def get_id_file_model_combinations(db_path: Union[str, Path]) -> List[tuple]:
     conn.close()
 
     return results
+
+
+def get_rows(
+    db_path: Union[str, Path],
+    file_name: Optional[str] = None,
+    model: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch all rows from the 'results' table with optional filtering.
+
+    Args:
+        db_path (Union[str, Path]): Path to the SQLite database file.
+        file_name (Optional[str]): Optional filter for the 'file' column.
+        model (Optional[str]): Optional filter for the 'model' column.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries representing rows.
+    """
+    # Convert db_path to a Path object if it's a string
+    db_path = Path(db_path) if isinstance(db_path, str) else db_path
+
+    # Ensure the database exists
+    if not db_path.exists():
+        raise FileNotFoundError(
+            f"Database not found at {db_path}. Initialize it first."
+        )
+
+    # Connect to the database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Build query with optional filters
+    query = "SELECT * FROM results"
+    params = []
+
+    conditions = []
+    if file_name:
+        conditions.append("file = ?")
+        params.append(file_name)
+    if model:
+        conditions.append("model = ?")
+        params.append(model)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    # Execute the query
+    cursor.execute(query, params)
+
+    # Fetch all results
+    rows = cursor.fetchall()
+
+    # Get column names
+    column_names = [desc[0] for desc in cursor.description]
+
+    # Close the connection
+    conn.close()
+
+    # Convert rows to a list of dictionaries
+    return [dict(zip(column_names, row)) for row in rows]
