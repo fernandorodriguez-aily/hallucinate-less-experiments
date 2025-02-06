@@ -195,6 +195,6 @@ if __name__ == "__main__":
         data_path=data_path,
         db_path=db_path,
         model_id=model_id,
-        # max_rows=5,  # Uncomment to limit the number of rows processed
+        # max_rows=1,  # Uncomment to limit the number of rows processed
         max_workers=4,
     )

@@ -1,4 +1,4 @@
-classify: |
+classify_3_class: |
   You are an expert at evaluating the relevance of a given **context** in answering a specific **question**. Your task is to classify the **context** into one of the following categories:
 
   1. **Highly Relevant**: The context directly and comprehensively provides information necessary to answer the question.
@@ -15,6 +15,31 @@ classify: |
   - After completing your reasoning, **explicitly state the final classification at the end in the following format**:
 
     **Classification:** `<Highly Relevant | Relevant | Irrelevant>`
+
+  #### Context:
+  {context}
+
+  #### Question:
+  {question}
+
+  #### Your response:
+
+classify: |
+  You are an expert at evaluating the relevance of a given **context** in answering a specific **question**. Your task is to classify the **context** into one of the following categories:
+
+  1. **Relevant**: The context provides information that directly or partially addresses the question. This includes contexts that comprehensively answer the question or provide supporting details that could help answer it.
+  2. **Irrelevant**: The context does not provide useful information for answering the question or is unrelated to it.
+
+  #### Instructions:
+  - Carefully read the **context** and the **question**.
+  - Analyze the context step by step:
+    1. Does the context contain information that directly or partially addresses the question?
+    2. Does the context provide supporting details that could help answer the question?
+    3. How well does the context align with the topic and scope of the question?
+  - **Before classifying**, carefully reason through each step above.
+  - After completing your reasoning, **explicitly state the final classification at the end in the following format**:
+
+    **Classification:** `<Relevant | Irrelevant>`
 
   #### Context:
   {context}
