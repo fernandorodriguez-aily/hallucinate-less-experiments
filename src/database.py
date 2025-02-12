@@ -28,6 +28,7 @@ def initialize_db(db_path: Union[str, Path]):
                 id INTEGER,
                 file TEXT,
                 model TEXT,
+                prompt TEXT,
                 title TEXT,
                 reasoning TEXT,
                 structured_reasoning TEXT,
@@ -87,7 +88,7 @@ def insert_row(
         print(f"Row inserted successfully into {db_path}")
 
 
-def get_id_file_model_combinations(db_path: Union[str, Path]) -> List[tuple]:
+def get_id_file_model_prompt_combinations(db_path: Union[str, Path]) -> List[tuple]:
     """
     Fetch all existing ID, file, model combinations from the database.
 
@@ -112,7 +113,7 @@ def get_id_file_model_combinations(db_path: Union[str, Path]) -> List[tuple]:
     cursor = conn.cursor()
 
     # Execute the query to fetch id and file combinations
-    cursor.execute("SELECT id, file, model FROM results")
+    cursor.execute("SELECT id, file, model, prompt FROM results")
 
     # Fetch all results
     results = cursor.fetchall()
@@ -127,6 +128,7 @@ def get_rows(
     db_path: Union[str, Path],
     file_name: Optional[str] = None,
     model: Optional[str] = None,
+    prompt_name: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Fetch all rows from the 'results' table with optional filtering.
@@ -135,6 +137,7 @@ def get_rows(
         db_path (Union[str, Path]): Path to the SQLite database file.
         file_name (Optional[str]): Optional filter for the 'file' column.
         model (Optional[str]): Optional filter for the 'model' column.
+        prompt_name (Optional[str]): Optional filter for the 'prompt' column.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries representing rows.
@@ -163,6 +166,9 @@ def get_rows(
     if model:
         conditions.append("model = ?")
         params.append(model)
+    if prompt_name:
+        conditions.append("prompt = ?")
+        params.append(prompt_name)
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)

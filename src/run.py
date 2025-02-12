@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Type, Union
 
 import pandas as pd
 from aily_ai_brain.common.enums import BedrockModelID, OpenAIModelID, OpenRouterModelID
@@ -11,8 +11,12 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable
 from tqdm import tqdm
 
-from src.database import get_id_file_model_combinations, initialize_db, insert_row
-from src.schema import ClassificationOutput
+from src.database import (
+    get_id_file_model_prompt_combinations,
+    initialize_db,
+    insert_row,
+)
+from src.schema import BaseClassificationOutput, ClassificationOutput2Class
 from src.utils import load_yaml, setup_basic_chain
 
 
@@ -57,7 +61,9 @@ def process(
 def run(
     data_path: Union[str, Path],
     db_path: Union[str, Path],
-    model_id: Union[OpenAIModelID, BedrockModelID, OpenRouterModelID],
+    model_id: Union[OpenAIModelID, BedrockModelID, OpenRouterModelID, str],
+    structured_output_class: Type[BaseClassificationOutput],
+    prompt_name: str,
     max_rows: Optional[int] = None,
     max_workers: Optional[int] = 4,
 ):
@@ -81,7 +87,7 @@ def run(
 
     # Set up analyze chain
     analyze_chain = setup_basic_chain(
-        prompt=prompts["classify"],
+        prompt=prompts[prompt_name],
         model_id=model_id,
         langfuse_handler=langfuse_handler,
         max_tokens=config["max_tokens"],
@@ -89,7 +95,7 @@ def run(
     )
 
     # Set up structured output parser and chain
-    so_parser = PydanticOutputParser(pydantic_object=ClassificationOutput)
+    so_parser = PydanticOutputParser(pydantic_object=structured_output_class)
     so_chain = setup_basic_chain(
         prompt=prompts["structured_output"],
         model_id=model_id,
@@ -104,28 +110,38 @@ def run(
 
     # Load and preprocess data
     data = pd.read_csv(data_path)
-    existing_combinations = get_id_file_model_combinations(db_path)
-    existing_df = pd.DataFrame(existing_combinations, columns=["id", "file", "model"])
+    existing_combinations = get_id_file_model_prompt_combinations(db_path)
+    existing_df = pd.DataFrame(
+        existing_combinations, columns=["id", "file", "model", "prompt"]
+    )
 
     # Count existing rows for the current file and model
-    rows_in_db_for_file_and_model = existing_df[
+    rows_in_db_for_file_model_prompt = existing_df[
         (existing_df["file"] == data_path.name)
         & (existing_df["model"] == str(model_id))
+        & (existing_df["prompt"] == str(prompt_name))
     ].shape[0]
 
     # Create a set of existing combinations for faster lookup
     existing_set = set(
-        (str(id), file, str(model)) for id, file, model in existing_combinations
+        (str(id), file, str(model), str(prompt))
+        for id, file, model, prompt in existing_combinations
     )
 
     # Add file and model columns to the data
     data["file"] = data_path.name
     data["model"] = str(model_id)
+    data["prompt"] = str(prompt_name)
 
     # Filter out already processed rows
     data_filtered = data[
         ~data.apply(
-            lambda row: (str(row["id"]), row["file"], str(row["model"]))
+            lambda row: (
+                str(row["id"]),
+                row["file"],
+                str(row["model"]),
+                str(row["prompt"]),
+            )
             in existing_set,
             axis=1,
         )
@@ -137,8 +153,8 @@ def run(
 
     # Print processing information
     print(
-        f"Number of rows in DB for file '{data_path.name}' and model '{model_id}': "
-        f"{rows_in_db_for_file_and_model}"
+        f"Number of rows in DB for file '{data_path.name}', model '{model_id}' "
+        f"and prompt '{prompt_name}': {rows_in_db_for_file_model_prompt}"
     )
     print(f"Processing {len(data_filtered)} out of total {len(data)} rows")
 
@@ -164,6 +180,7 @@ def run(
                 "id": row["id"],
                 "file": row["file"],
                 "model": model_id,
+                "prompt": prompt_name,
                 "title": row["title"],
                 "reasoning": output,
                 "structured_reasoning": formatted_output.reasoning,
@@ -187,14 +204,20 @@ if __name__ == "__main__":
     # Set up paths and model ID
     data_path = base_path / config["data_dir"] / config["data_file"]
     db_path = base_path / config["data_dir"] / config["results_file"]
-    model_id = BedrockModelID.Claude35Sonnet20240620V1_0
+
+    # model_id = BedrockModelID.Claude35Sonnet20240620V1_0
     # model_id = OpenAIModelID.GPT4O
+    model_id = config["model_id"]
+
+    prompt_name = config["prompt_name"]
 
     # Run the main processing pipeline
     run(
         data_path=data_path,
         db_path=db_path,
         model_id=model_id,
+        structured_output_class=ClassificationOutput2Class,
+        prompt_name=prompt_name,
         # max_rows=1,  # Uncomment to limit the number of rows processed
-        max_workers=4,
+        max_workers=2,
     )

@@ -24,7 +24,7 @@ def load_yaml(path: Path) -> Dict[str, Any]:
 
 
 def setup_basic_chain(
-    model_id: Union[BedrockModelID, OpenAIModelID, OpenRouterModelID],
+    model_id: Union[BedrockModelID, OpenAIModelID, OpenRouterModelID, str],
     prompt: str,
     langfuse_handler: BaseCallbackHandler,
     max_tokens: int,

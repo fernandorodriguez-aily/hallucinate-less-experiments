@@ -1,17 +1,38 @@
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel
 
+T = TypeVar("T", bound=str)
 
-class ClassificationOutput(BaseModel):
+
+class BaseClassificationOutput(BaseModel, Generic[T]):
     """
-    Represents the output of a classification task.
+    Base class for classification outputs.
 
     Attributes:
         reasoning (str): Text field for the reasoning behind the classification.
-        relevance_label (Literal): The relevance label, constrained to three
-                                   allowed values.
+        relevance_label (T): The relevance label, constrained in subclasses.
     """
 
     reasoning: str
-    relevance_label: Literal["Highly Relevant", "Relevant", "Irrelevant"]
+    relevance_label: T
+
+
+class ClassificationOutput3Class(
+    BaseClassificationOutput[Literal["Highly Relevant", "Relevant", "Irrelevant"]]
+):
+    """
+    Represents the output of a classification task with 3 possible labels.
+    """
+
+    pass
+
+
+class ClassificationOutput2Class(
+    BaseClassificationOutput[Literal["Relevant", "Irrelevant"]]
+):
+    """
+    Represents the output of a classification task with 2 possible labels.
+    """
+
+    pass

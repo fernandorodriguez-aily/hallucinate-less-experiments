@@ -24,7 +24,7 @@ classify_3_class: |
 
   #### Your response:
 
-classify: |
+classify_2_class_long: |
   You are an expert at evaluating the relevance of a given **context** in answering a specific **question**. Your task is to classify the **context** into one of the following categories:
 
   1. **Relevant**: The context provides information that directly or partially addresses the question. This includes contexts that comprehensively answer the question or provide supporting details that could help answer it.
@@ -49,6 +49,14 @@ classify: |
 
   #### Your response:
 
+classify_2_class_short: |
+  Determine if the context is sufficient to answer the query. Respond with 'Relevant' or 'Irrelevant'.
+
+  #### Context:
+  {context}
+
+  #### Question:
+  {question}
 
 structured_output: |
   You are a data transformation assistant. Your task is to transform the following unstructured text into structured JSON text that strictly adheres to the provided Pydantic model schema.
